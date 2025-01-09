@@ -1,13 +1,46 @@
-name: Scan secrets Trufflehog 
-on: [pull_request]
+name: TruffleHog Scan
+
+on:
+  push:
+    branches:
+      - '**'  # Run on all branches
+  pull_request:
+    branches:
+      - '**'  # Run on all PRs
+
 jobs:
-  ScanSecrets:
-    name: Scan secrets
+  trufflehog:
     runs-on: ubuntu-latest
+    name: Run TruffleHog Scan
+
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          ref: ${{ github.head_ref }}
-      - name: trufflehog-actions-scan
-        uses: edplato/trufflehog-actions-scan@master
+          fetch-depth: 0  # Ensure all history is fetched for scanning
+
+      - name: Install TruffleHog
+        run: |
+          pip install --upgrade pip
+          pip install trufflehog
+
+      - name: Run TruffleHog
+        run: |
+          trufflehog filesystem --directory . --json > trufflehog-results.json
+
+      - name: Show Scan Results
+        if: always()  # Ensure this runs even if the previous step fails
+        run: |
+          if [ -s trufflehog-results.json ]; then
+            echo "Secrets detected!"
+            cat trufflehog-results.json
+            exit 1
+          else
+            echo "No secrets detected."
+          fi
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: TruffleHog-Results
+          path: trufflehog-results.json
