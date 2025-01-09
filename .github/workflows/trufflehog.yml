@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Ensure the entire Git history is fetched
+          fetch-depth: 0  # Ensure the entire Git history is fetched for scanning
 
       - name: Install TruffleHog
         run: |
@@ -27,7 +27,7 @@ jobs:
       - name: Run TruffleHog
         run: |
           echo "Running TruffleHog on the repository..."
-          trufflehog git file://$(pwd) --json > trufflehog-results.json
+          trufflehog --repo_path $(pwd) --json > trufflehog-results.json
 
       - name: Display Results
         if: always()  # Ensure this step runs regardless of the scan's success/failure
