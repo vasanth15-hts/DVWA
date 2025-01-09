@@ -3,10 +3,10 @@ name: TruffleHog Scan
 on:
   push:
     branches:
-      - '**'  # Run on all branches
+      - '**'  # Trigger on all branches
   pull_request:
     branches:
-      - '**'  # Run on all PRs
+      - '**'  # Trigger on all PRs
 
 jobs:
   trufflehog:
@@ -17,17 +17,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Ensure full history is fetched for accurate scanning
+          fetch-depth: 0  # Ensure the entire Git history is fetched
+
+      - name: Install TruffleHog
+        run: |
+          pip install --upgrade pip
+          pip install trufflehog
 
       - name: Run TruffleHog
-        uses: trufflesecurity/trufflehog-action@v4
-        with:
-          scan_type: repo
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
-          output_file: trufflehog-results.json
+        run: |
+          echo "Running TruffleHog on the repository..."
+          trufflehog git file://$(pwd) --json > trufflehog-results.json
 
-      - name: Upload Scan Results
+      - name: Display Results
+        if: always()  # Ensure this step runs regardless of the scan's success/failure
+        run: |
+          if [ -s trufflehog-results.json ]; then
+            echo "Potential secrets detected!"
+            cat trufflehog-results.json
+            exit 1
+          else
+            echo "No secrets detected."
+          fi
+
+      - name: Upload Results
         uses: actions/upload-artifact@v3
         with:
           name: TruffleHog-Results
