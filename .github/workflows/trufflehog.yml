@@ -1,0 +1,34 @@
+name: TruffleHog Scan
+
+on:
+  push:
+    branches:
+      - '**'  # Run on all branches
+  pull_request:
+    branches:
+      - '**'  # Run on all PRs
+
+jobs:
+  trufflehog:
+    runs-on: ubuntu-latest
+    name: Run TruffleHog Scan
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Ensure full history is fetched for accurate scanning
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog-action@v4
+        with:
+          scan_type: repo
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          output_file: trufflehog-results.json
+
+      - name: Upload Scan Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: TruffleHog-Results
+          path: trufflehog-results.json
