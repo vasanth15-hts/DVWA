@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Ensure the entire Git history is fetched for scanning
+          fetch-depth: 0  # Ensure full Git history is fetched
 
       - name: Install TruffleHog
         run: |
@@ -25,9 +25,11 @@ jobs:
           pip install trufflehog
 
       - name: Run TruffleHog
+        env:
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Running TruffleHog on the repository..."
-          trufflehog --repo_path $(pwd) --json > trufflehog-results.json
+          trufflehog git https://github.com/${{ github.repository }} --json --branch ${{ github.ref_name }} > trufflehog-results.json
 
       - name: Display Results
         if: always()  # Ensure this step runs regardless of the scan's success/failure
