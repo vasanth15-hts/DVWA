@@ -43,6 +43,34 @@ if( $DBMS == 'MySQL' ) {
 	$database_type_name = "PostgreSQL";
 }
 
+$git_ref = "<em>Unknown</em><br><br>";
+$mod_rewrite = "<em>Unknown</em><br>";
+
+if (PHP_OS == "Linux") {
+	if (is_dir (".git")) {
+		$git_log = shell_exec ("git -c 'safe.directory=*' log -1");
+		if (!is_null ($git_log)) {
+			$tmp = explode ("\n", $git_log);
+			$date = str_replace ("Date: ", "Date: <em>", $tmp[2]);
+			$git_ref = "<ul><li>" . str_replace ("commit ", "Git reference: <em>", $tmp[0]) . "</em></li><li>" . $date . "</em></li></ul>";
+		}
+	}
+
+	$out = shell_exec ("apachectl -M | grep rewrite_module");
+	if ($out == "") {
+		$mod_rewrite = "<em><span class='failure'>Not Enabled</span></em><br>";
+	} else {
+		$mod_rewrite = "<em><span class='success'>Enabled</span></em><br>";
+	}
+}
+
+if (!is_dir ("./vulnerabilities/api/vendor")) {
+	$vendor = "<em><span class='failure'>Not Installed</span></em><br><br>";
+	$vendor .= "For information on how to install these, see the <a href='https://github.com/digininja/DVWA/blob/master/README.md#vendor-files'>README</a>.<br>";
+} else {
+	$vendor = "<em><span class='success'>Installed</span></em><br>";
+}
+
 $phpVersionWarning = "";
 
 if (version_compare(phpversion(), '6', '<')) {
@@ -65,10 +93,24 @@ $page[ 'body' ] .= "
 
 	<h2>Setup Check</h2>
 
-	{$SERVER_NAME}<br />
-	<br />
+	<em>General</em><br />
 	{$DVWAOS}<br />
+	<br>
+	DVWA version: {$git_ref}
+	<br>
+	{$DVWARecaptcha}<br />
 	<br />
+	{$DVWAUploadsWrite}<br />
+	{$bakWritable}
+	<br />
+	<br>
+
+	<em>Apache</em><br>
+	{$SERVER_NAME}<br /><br>
+	mod_rewrite: {$mod_rewrite}
+	mod_rewrite is required for the AP labs.<br><br>
+
+	<em>PHP</em><br>
 	PHP version: <em>" . phpversion() . "</em><br />
 	{$phpVersionWarning}
 	{$phpDisplayErrors}<br />
@@ -79,6 +121,7 @@ $page[ 'body' ] .= "
 	{$phpMySQL}<br />
 	{$phpPDO}<br />
 	<br />
+	<em>Database</em><br>
 	Backend database: <em>{$database_type_name}</em><br />
 	{$MYSQL_USER}<br />
 	{$MYSQL_PASS}<br />
@@ -86,12 +129,10 @@ $page[ 'body' ] .= "
 	{$MYSQL_SERVER}<br />
 	{$MYSQL_PORT}<br />
 	<br />
-	{$DVWARecaptcha}<br />
-	<br />
-	{$DVWAUploadsWrite}<br />
-	{$bakWritable}
-	<br />
-	<br />
+	<em>API</em><br>
+	<i>This section is only important if you want to use the API module.</i><br>
+	Vendor files installed: {$vendor}<br>
+
 	<i><span class=\"failure\">Status in red</span>, indicate there will be an issue when trying to complete some modules.</i><br />
 	<br />
 	If you see disabled on either <i>allow_url_fopen</i> or <i>allow_url_include</i>, set the following in your php.ini file and restart Apache.<br />
